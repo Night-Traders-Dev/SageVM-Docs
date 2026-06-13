@@ -65,6 +65,7 @@ const opcodes: Opcode[] = [
   { name: 'OP_SHIFT_LEFT', value: '0x1F', description: 'Bitwise left shift', category: 'bitwise' },
   { name: 'OP_SHIFT_RIGHT', value: '0x20', description: 'Bitwise right shift', category: 'bitwise' },
   { name: 'OP_NOT', value: '0x21', description: 'Logical NOT', category: 'bitwise' },
+  { name: 'OP_TRUTHY', value: '0x22', description: 'Check if value is truthy', category: 'comparison' },
   { name: 'OP_JUMP', value: '0x23', description: 'Unconditional jump', category: 'control', example: 'OP_JUMP 16  ; PC += 16' },
   { name: 'OP_JUMP_IF_FALSE', value: '0x24', description: 'Jump if the top value is false', category: 'control' },
   { name: 'OP_LOOP_BACK', value: '0x33', description: 'Jump to the start of a loop', category: 'control' },
@@ -87,6 +88,36 @@ const opcodes: Opcode[] = [
   { name: 'OP_PRINT', value: '0x2A', description: 'Print a value', category: 'stack' },
   { name: 'OP_EXEC_AST_STMT', value: '0x2B', description: 'Execute an AST statement (fallback)', category: 'control' },
   { name: 'OP_HALT', value: '0xFF', description: 'Halt execution', category: 'control' },
+
+  /* GPU Opcodes */
+  { name: 'OP_GPU_POLL_EVENTS', value: '0x3B', description: 'Poll windowing system events', category: 'control' },
+  { name: 'OP_GPU_WINDOW_SHOULD_CLOSE', value: '0x3C', description: 'Check if window close requested', category: 'control' },
+  { name: 'OP_GPU_GET_TIME', value: '0x3D', description: 'Get high-precision GPU time', category: 'arithmetic' },
+  { name: 'OP_GPU_KEY_PRESSED', value: '0x3E', description: 'Check if key was pressed this frame', category: 'memory' },
+  { name: 'OP_GPU_KEY_DOWN', value: '0x3F', description: 'Check if key is currently held down', category: 'memory' },
+  { name: 'OP_GPU_MOUSE_POS', value: '0x40', description: 'Get current mouse position', category: 'memory' },
+  { name: 'OP_GPU_MOUSE_DELTA', value: '0x41', description: 'Get mouse movement delta', category: 'memory' },
+  { name: 'OP_GPU_UPDATE_INPUT', value: '0x42', description: 'Update internal input state', category: 'control' },
+  { name: 'OP_GPU_BEGIN_COMMANDS', value: '0x43', description: 'Begin recording GPU commands', category: 'control' },
+  { name: 'OP_GPU_END_COMMANDS', value: '0x44', description: 'Finish recording GPU commands', category: 'control' },
+  { name: 'OP_GPU_CMD_BEGIN_RP', value: '0x45', description: 'Begin a render pass', category: 'control' },
+  { name: 'OP_GPU_CMD_END_RP', value: '0x46', description: 'End current render pass', category: 'control' },
+  { name: 'OP_GPU_CMD_DRAW', value: '0x47', description: 'Draw primitive geometry', category: 'oop' },
+  { name: 'OP_GPU_CMD_BIND_GP', value: '0x48', description: 'Bind a graphics pipeline', category: 'oop' },
+  { name: 'OP_GPU_CMD_BIND_DS', value: '0x49', description: 'Bind a descriptor set', category: 'oop' },
+  { name: 'OP_GPU_CMD_SET_VP', value: '0x4A', description: 'Set viewport dimensions', category: 'oop' },
+  { name: 'OP_GPU_CMD_SET_SC', value: '0x4B', description: 'Set scissor rectangle', category: 'oop' },
+  { name: 'OP_GPU_CMD_BIND_VB', value: '0x4C', description: 'Bind vertex buffer', category: 'oop' },
+  { name: 'OP_GPU_CMD_BIND_IB', value: '0x4D', description: 'Bind index buffer', category: 'oop' },
+  { name: 'OP_GPU_CMD_DRAW_IDX', value: '0x4E', description: 'Draw indexed geometry', category: 'oop' },
+  { name: 'OP_GPU_SUBMIT_SYNC', value: '0x4F', description: 'Submit commands with fence sync', category: 'control' },
+  { name: 'OP_GPU_ACQUIRE_IMG', value: '0x50', description: 'Acquire next swapchain image', category: 'control' },
+  { name: 'OP_GPU_PRESENT', value: '0x51', description: 'Present image to screen', category: 'control' },
+  { name: 'OP_GPU_WAIT_FENCE', value: '0x52', description: 'Wait for GPU fence', category: 'control' },
+  { name: 'OP_GPU_RESET_FENCE', value: '0x53', description: 'Reset GPU fence', category: 'control' },
+  { name: 'OP_GPU_UPDATE_UNIFORM', value: '0x54', description: 'Update uniform buffer data', category: 'memory' },
+  { name: 'OP_GPU_CMD_PUSH_CONST', value: '0x55', description: 'Push constants to shader', category: 'memory' },
+  { name: 'OP_GPU_CMD_DISPATCH', value: '0x56', description: 'Dispatch compute shader', category: 'control' },
 ]
 
 export default function Opcodes() {
@@ -147,7 +178,7 @@ export default function Opcodes() {
             Opcode Reference
           </h2>
           <p className="font-body text-white/50 mt-4 max-w-2xl mx-auto">
-            59 general-purpose opcodes plus 28 GPU opcodes. Full parity with
+            60 general-purpose opcodes plus 28 GPU opcodes. Full parity with
             SageLang v3.6.5 MetalVM.
           </p>
         </div>
@@ -258,7 +289,7 @@ export default function Opcodes() {
         <div className="flex justify-center gap-8 mt-12">
           <div className="text-center">
             <p className="font-display text-3xl font-bold text-neon-cyan">
-              59
+              60
             </p>
             <p className="font-mono text-xs text-white/40 mt-1">
               General Opcodes
