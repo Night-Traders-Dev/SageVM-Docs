@@ -226,6 +226,7 @@ export default function Opcodes() {
             return (
               <div
                 key={op.name}
+                id={op.name}
                 className={`opcode-card glass-panel rounded-lg overflow-hidden transition-all duration-300 cursor-pointer ${
                   isExpanded ? 'neon-border-cyan' : 'hover:border-white/[0.1]'
                 }`}

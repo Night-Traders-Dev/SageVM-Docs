@@ -71,8 +71,8 @@ export default function Architecture() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const resize = () => {
-      const rect = container.getBoundingClientRect()
+    const resize = (entries: ResizeObserverEntry[]) => {
+      const rect = entries[0].contentRect
       canvas.width = rect.width * window.devicePixelRatio
       canvas.height = rect.height * window.devicePixelRatio
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
@@ -80,7 +80,20 @@ export default function Architecture() {
       canvas.style.height = rect.height + 'px'
       initNodes(rect.width, rect.height)
     }
-    resize()
+
+    const resizeObserver = new ResizeObserver(resize)
+    resizeObserver.observe(container)
+
+    const getNodeAt = (mx: number, my: number) => {
+      for (const node of nodesRef.current) {
+        const dx = mx - node.x
+        const dy = my - node.y
+        if (Math.sqrt(dx * dx + dy * dy) < node.radius + 5) {
+          return node
+        }
+      }
+      return null
+    }
 
     const onMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect()
@@ -88,31 +101,35 @@ export default function Architecture() {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
       }
-
-      // Check hover
-      let found: string | null = null
-      for (const node of nodesRef.current) {
-        const dx = mousePos.current.x - node.x
-        const dy = mousePos.current.y - node.y
-        if (Math.sqrt(dx * dx + dy * dy) < node.radius + 5) {
-          found = node.id
-          break
-        }
-      }
-      setHoveredNode(found)
+      const node = getNodeAt(mousePos.current.x, mousePos.current.y)
+      setHoveredNode(node ? node.id : null)
+      canvas.style.cursor = node ? 'pointer' : 'crosshair'
     }
 
     const onMouseLeave = () => {
       mousePos.current = { x: -1000, y: -1000 }
       setHoveredNode(null)
+      canvas.style.cursor = 'crosshair'
+    }
+
+    const onClick = () => {
+      const node = getNodeAt(mousePos.current.x, mousePos.current.y)
+      if (node) {
+        // Handle navigation or highlighting here. 
+        // For now, let's just log to simulate the action.
+        console.log('Node clicked:', node.label)
+        // In a real app, you might use window.location.hash or a router:
+        // window.location.hash = `#${node.label}`
+      }
     }
 
     canvas.addEventListener('mousemove', onMouseMove)
     canvas.addEventListener('mouseleave', onMouseLeave)
-    window.addEventListener('resize', resize)
+    canvas.addEventListener('click', onClick)
 
     const updatePhysics = (width: number, height: number) => {
       const nodes = nodesRef.current
+
 
       // Spring toward origin
       for (const n of nodes) {
@@ -243,9 +260,10 @@ export default function Architecture() {
 
     return () => {
       cancelAnimationFrame(animRef.current)
+      resizeObserver.disconnect()
       canvas.removeEventListener('mousemove', onMouseMove)
       canvas.removeEventListener('mouseleave', onMouseLeave)
-      window.removeEventListener('resize', resize)
+      canvas.removeEventListener('click', onClick)
     }
   }, [hoveredNode, initNodes])
 
