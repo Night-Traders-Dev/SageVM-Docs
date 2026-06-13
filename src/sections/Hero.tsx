@@ -66,19 +66,20 @@ export default function Hero() {
     renderer.toneMapping = THREE.ReinhardToneMapping
 
     const renderScene = new RenderPass(scene, camera)
+    
+    // Balanced bloom attributes to prevent full-screen color burn out
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(container.clientWidth, container.clientHeight),
       1.5, 0.4, 0.85
     )
-    bloomPass.threshold = 0
-    bloomPass.strength = 1.2
-    bloomPass.radius = 0.5
+    bloomPass.threshold = 0.2
+    bloomPass.strength = 0.6
+    bloomPass.radius = 0.6
 
     const composer = new EffectComposer(renderer)
     composer.addPass(renderScene)
     composer.addPass(bloomPass)
 
-    // Ambient + point lights
     scene.add(new THREE.AmbientLight(0xffffff, 0.05))
     const pLight1 = new THREE.PointLight(0x00f0ff, 2, 20)
     pLight1.position.set(5, 5, 5)
@@ -87,15 +88,16 @@ export default function Hero() {
     pLight2.position.set(-5, -3, 3)
     scene.add(pLight2)
 
-    // Tumbler group
     const tumblerGroup = new THREE.Group()
     scene.add(tumblerGroup)
 
     const gateGeo = createGateGeometry()
+    
+    // Controlled material brightness to keep contrast high
     const gateMat = new THREE.MeshStandardMaterial({
       color: 0x001122,
       emissive: 0x00f0ff,
-      emissiveIntensity: 2.0,
+      emissiveIntensity: 0.8,
       metalness: 0.9,
       roughness: 0.1,
     })
@@ -118,7 +120,6 @@ export default function Hero() {
       mesh.scale.setScalar(0.5 + Math.random() * 0.8)
       tumblerGroup.add(mesh)
 
-      // Wireframe overlay
       const edges = new THREE.EdgesGeometry(gateGeo)
       const wireMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 })
       const wireframeMesh = new THREE.LineSegments(edges, wireMat)
@@ -134,7 +135,6 @@ export default function Hero() {
 
     sceneRef.current = { renderer, scene, camera, composer, tumblerGroup, allGates, cleanup: () => {} }
 
-    // Scroll-driven animation
     const scrollTrigger = ScrollTrigger.create({
       trigger: container,
       start: 'top top',
@@ -142,12 +142,9 @@ export default function Hero() {
       scrub: 1,
       onUpdate: (self) => {
         const progress = self.progress
-
-        // Rotate tumbler group
         tumblerGroup.rotation.y += (progress * Math.PI * 4 - tumblerGroup.rotation.y) * 0.05
         tumblerGroup.rotation.x += (progress * Math.PI * 0.5 - tumblerGroup.rotation.x) * 0.05
 
-        // Animate each gate
         allGates.forEach((gate, idx) => {
           const itemProgress = idx / allGates.length
           if (progress > itemProgress) {
@@ -164,7 +161,6 @@ export default function Hero() {
           }
         })
 
-        // Camera pullback
         const targetZ = 8 - progress * 4
         camera.position.z += (targetZ - camera.position.z) * 0.05
       },
@@ -206,39 +202,44 @@ export default function Hero() {
       <div className="hero-sticky">
         <canvas ref={canvasRef} className="hero-canvas" />
 
-        {/* Hero text overlay */}
-        <div className="absolute inset-0 z-10 flex flex-col justify-end p-8 md:p-16 pointer-events-none">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        {/* Ambient bottom gradient shade isolates background objects and boosts content clarity */}
+        <div className="absolute inset-0 z-10 flex flex-col justify-end p-6 md:p-16 pointer-events-none bg-gradient-to-t from-[#030303]/90 via-[#030303]/40 to-transparent">
+          
+          {/* Stack elements vertically on smaller ports to maintain clear component margins */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 md:gap-6 pb-4">
             <div>
+              {/* Scaled down min clamp bounds to prevent cross-component layout clashing */}
               <h1
-                className="font-display font-bold text-white leading-none tracking-tight"
+                className="font-display font-bold text-white leading-tight tracking-tight"
                 style={{
-                  fontSize: 'clamp(60px, 12vw, 140px)',
-                  textShadow: '0 0 40px rgba(0,240,255,0.3)',
+                  fontSize: 'clamp(44px, 10vw, 140px)',
+                  textShadow: '0 0 20px rgba(0,240,255,0.15)',
                   letterSpacing: '-0.03em',
                 }}
               >
                 SageVM
               </h1>
-              <p className="font-mono text-sm md:text-base text-white/50 mt-4 tracking-wider">
+              {/* Uplifted contrast value for readable body elements */}
+              <p className="font-mono text-xs md:text-base text-white/80 mt-2 tracking-wider max-w-sm md:max-w-none">
                 Self-hosted bytecode interpreter & compiler
               </p>
             </div>
-            <div className="text-right">
-              <p className="font-mono text-xs text-white/40">
+            
+            {/* Standardized simple node alignments across layouts */}
+            <div className="text-left md:text-right mt-2 md:mt-0 border-t border-white/10 md:border-none pt-3 md:pt-0">
+              <p className="font-mono text-[10px] md:text-xs text-white/60">
                 Sage General Virtual Machine // v0.9.3
               </p>
-              <div className="flex items-center gap-2 mt-2 justify-end">
-                <span className="w-2 h-2 rounded-full bg-sage-light animate-pulse" />
-                <span className="font-mono text-xs text-sage-light">Active</span>
+              <div className="flex items-center gap-2 mt-1 justify-start md:justify-end">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                <span className="font-mono text-xs text-cyan-400 font-semibold">Active</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2">
-          <div className="w-px h-12 bg-gradient-to-b from-transparent via-sage-mid/50 to-sage-mid animate-pulse-glow" />
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2">
+          <div className="w-px h-8 bg-gradient-to-b from-transparent via-cyan-500/30 to-cyan-500 animate-pulse" />
         </div>
       </div>
 
