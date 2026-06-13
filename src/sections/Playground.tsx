@@ -255,7 +255,7 @@ export default function Playground() {
     >
       <div className="relative z-10 max-w-7xl mx-auto px-8">
         <div className="text-center mb-16">
-          <p className="font-mono text-sm text-neon-cyan tracking-widest mb-4">
+          <p className="font-mono text-sm text-sage-mid tracking-widest mb-4">
             INTERACTIVE
           </p>
           <h2 className="font-display text-4xl md:text-6xl font-bold text-white tracking-tight">
@@ -274,7 +274,7 @@ export default function Playground() {
               onClick={() => selectProgram(i)}
               className={`px-4 py-2 rounded-lg font-mono text-xs transition-all duration-300 ${
                 selectedProgramIdx === i
-                  ? 'bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30'
+                  ? 'bg-sage-mid/15 text-sage-mid border border-sage-mid/30'
                   : 'bg-white/[0.03] text-white/50 border border-transparent hover:border-white/[0.08]'
               }`}
             >
@@ -307,13 +307,13 @@ export default function Playground() {
 
             <div className="glass-panel rounded-xl overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-                <span className="font-mono text-xs text-neon-cyan">
+                <span className="font-mono text-xs text-sage-mid">
                   {program.isCustom ? 'BYTECODE EDITOR' : 'BYTECODE'}
                 </span>
                 {program.isCustom && (
-                  <Edit3 className="w-4 h-4 text-neon-cyan" />
+                  <Edit3 className="w-4 h-4 text-sage-mid" />
                 )}
-                {!program.isCustom && <Zap className="w-4 h-4 text-neon-cyan" />}
+                {!program.isCustom && <Zap className="w-4 h-4 text-sage-mid" />}
               </div>
               
               {program.isCustom ? (
@@ -336,7 +336,7 @@ export default function Playground() {
                         }}
                         className={`py-0.5 px-1 rounded transition-colors ${
                           i === currentStep
-                            ? 'bg-neon-cyan/10 text-neon-cyan'
+                            ? 'bg-sage-mid/10 text-sage-mid'
                             : 'text-white/60'
                         }`}
                       >
@@ -357,7 +357,7 @@ export default function Playground() {
               <button
                 onClick={run}
                 disabled={isRunning}
-                className="flex items-center gap-2 px-5 py-2.5 bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30 rounded-lg font-mono text-sm hover:bg-neon-cyan/25 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 bg-sage-mid/15 text-sage-mid border border-sage-mid/30 rounded-lg font-mono text-sm hover:bg-sage-mid/25 transition-all disabled:opacity-50"
               >
                 <Play className="w-4 h-4" />
                 Run
@@ -365,14 +365,14 @@ export default function Playground() {
               <button
                 onClick={step}
                 disabled={isRunning}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.03] text-white/70 border border-white/[0.08] rounded-lg font-mono text-sm hover:border-neon-cyan/30 hover:text-neon-cyan transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.03] text-white/70 border border-white/[0.08] rounded-lg font-mono text-sm hover:border-sage-mid/30 hover:text-sage-mid transition-all disabled:opacity-50"
               >
                 <StepForward className="w-4 h-4" />
                 Step
               </button>
               <button
                 onClick={reset}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.03] text-white/70 border border-white/[0.08] rounded-lg font-mono text-sm hover:border-neon-cyan/30 hover:text-neon-cyan transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.03] text-white/70 border border-white/[0.08] rounded-lg font-mono text-sm hover:border-sage-mid/30 hover:text-sage-mid transition-all"
               >
                 <RotateCcw className="w-4 h-4" />
                 Reset
@@ -381,7 +381,7 @@ export default function Playground() {
 
             <div className="glass-panel rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-white/[0.06]">
-                <span className="font-mono text-xs text-neon-green">
+                <span className="font-mono text-xs text-sage-light">
                   STACK
                 </span>
               </div>
@@ -395,9 +395,9 @@ export default function Playground() {
                     {stack.map((val, i) => (
                       <div
                         key={i}
-                        className="neon-border-green rounded-lg px-4 py-3 bg-neon-green/5 animate-in fade-in slide-in-from-bottom-2"
+                        className="border-sage-light rounded-lg px-4 py-3 bg-sage-light/5 animate-in fade-in slide-in-from-bottom-2"
                       >
-                        <span className="font-mono text-sm text-neon-green">
+                        <span className="font-mono text-sm text-sage-light">
                           {typeof val === 'string' ? `"${val}"` : val}
                         </span>
                       </div>
@@ -409,7 +409,7 @@ export default function Playground() {
 
             <div className="glass-panel rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-white/[0.06]">
-                <span className="font-mono text-xs text-neon-amber">
+                <span className="font-mono text-xs text-amber">
                   CONSOLE
                 </span>
               </div>

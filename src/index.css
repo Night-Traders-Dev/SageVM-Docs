@@ -79,12 +79,12 @@
     border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
-  .neon-border-cyan {
+  .border-sage-mid {
     border: 1px solid rgba(0, 240, 255, 0.3);
     box-shadow: 0 0 15px rgba(0, 240, 255, 0.1), inset 0 0 15px rgba(0, 240, 255, 0.05);
   }
 
-  .neon-border-green {
+  .border-sage-light {
     border: 1px solid rgba(10, 255, 96, 0.3);
     box-shadow: 0 0 15px rgba(10, 255, 96, 0.1), inset 0 0 15px rgba(10, 255, 96, 0.05);
   }

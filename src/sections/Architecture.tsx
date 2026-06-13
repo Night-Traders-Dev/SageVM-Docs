@@ -288,7 +288,7 @@ export default function Architecture() {
       <div className="relative z-10 max-w-7xl mx-auto px-8">
         {/* Header */}
         <div className="text-center mb-16">
-          <p className="font-mono text-sm text-neon-cyan tracking-widest mb-4">
+          <p className="font-mono text-sm text-sage-mid tracking-widest mb-4">
             SYSTEM ARCHITECTURE
           </p>
           <h2 className="font-display text-4xl md:text-6xl font-bold text-white tracking-tight">
@@ -329,7 +329,7 @@ export default function Architecture() {
                       className="w-4 h-4 rounded-full"
                       style={{ background: hoveredNodeData.color }}
                     />
-                    <span className="font-mono text-neon-cyan text-sm">
+                    <span className="font-mono text-sage-mid text-sm">
                       {hoveredNodeData.label}
                     </span>
                   </div>

@@ -229,8 +229,8 @@ export default function Hero() {
                 Sage General Virtual Machine // v0.9.3
               </p>
               <div className="flex items-center gap-2 mt-2 justify-end">
-                <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
-                <span className="font-mono text-xs text-neon-green">Active</span>
+                <span className="w-2 h-2 rounded-full bg-sage-light animate-pulse" />
+                <span className="font-mono text-xs text-sage-light">Active</span>
               </div>
             </div>
           </div>
@@ -238,7 +238,7 @@ export default function Hero() {
 
         {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2">
-          <div className="w-px h-12 bg-gradient-to-b from-transparent via-neon-cyan/50 to-neon-cyan animate-pulse-glow" />
+          <div className="w-px h-12 bg-gradient-to-b from-transparent via-sage-mid/50 to-sage-mid animate-pulse-glow" />
         </div>
       </div>
 

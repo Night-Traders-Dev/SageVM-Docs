@@ -13,10 +13,21 @@ module.exports = {
         void: '#030303',
         surface: '#0a0a0a',
         glass: 'rgba(255, 255, 255, 0.03)',
-        'neon-cyan': '#00f0ff',
-        'neon-green': '#0aff60',
-        'neon-amber': '#ffaa00',
-        'text-accent': '#a3a3ff',
+        sage: {
+          dark: '#285C34',
+          mid: '#4E7F3D',
+          light: '#769C52',
+        },
+        gold: {
+          primary: '#C7A75A',
+          light: '#D9B96C',
+        },
+        brown: {
+          dark: '#5A3922',
+          mid: '#8A6037',
+        },
+        ivory: '#E8DDC6',
+        amber: '#D58C22',
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -60,8 +71,8 @@ module.exports = {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-        'neon-cyan': '0 0 20px rgba(0, 240, 255, 0.3)',
-        'neon-green': '0 0 20px rgba(10, 255, 96, 0.3)',
+        'sage': '0 0 20px rgba(78, 127, 61, 0.3)',
+        'gold': '0 0 20px rgba(199, 167, 90, 0.3)',
       },
       keyframes: {
         "accordion-down": {

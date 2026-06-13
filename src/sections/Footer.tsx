@@ -38,14 +38,14 @@ export default function Footer() {
   return (
     <footer className="relative bg-void border-t border-white/[0.06]">
       {/* Top glow line */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/30 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sage-mid/30 to-transparent" />
 
       <div className="max-w-7xl mx-auto px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
           {/* Brand */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <Cpu className="w-6 h-6 text-neon-cyan" />
+              <Cpu className="w-6 h-6 text-sage-mid" />
               <span className="font-display font-bold text-xl text-white tracking-tight">
                 SageVM
               </span>
@@ -56,7 +56,7 @@ export default function Footer() {
               execution.
             </p>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-sage-light animate-pulse" />
               <span className="font-mono text-xs text-white/40">
                 v0.9.3 — Active Development
               </span>
@@ -77,17 +77,17 @@ export default function Footer() {
                         href={link.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-white/60 text-sm hover:text-neon-cyan transition-colors duration-300 inline-flex items-center gap-2 group"
+                        className="text-white/60 text-sm hover:text-sage-mid transition-colors duration-300 inline-flex items-center gap-2 group"
                       >
                         {'icon' in link && link.icon && (
-                          <link.icon className="w-3.5 h-3.5 text-white/30 group-hover:text-neon-cyan transition-colors" />
+                          <link.icon className="w-3.5 h-3.5 text-white/30 group-hover:text-sage-mid transition-colors" />
                         )}
                         {link.label}
                       </a>
                     ) : (
                       <button
                         onClick={() => scrollTo(link.href)}
-                        className="text-white/60 text-sm hover:text-neon-cyan transition-colors duration-300"
+                        className="text-white/60 text-sm hover:text-sage-mid transition-colors duration-300"
                       >
                         {link.label}
                       </button>
@@ -109,7 +109,7 @@ export default function Footer() {
               href="https://github.com/Night-Traders-Dev/SageVM"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white/30 hover:text-neon-cyan transition-colors"
+              className="text-white/30 hover:text-sage-mid transition-colors"
             >
               <Github className="w-5 h-5" />
             </a>

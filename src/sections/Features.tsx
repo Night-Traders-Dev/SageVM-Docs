@@ -122,7 +122,7 @@ export default function Features() {
       <div className="relative z-10 max-w-7xl mx-auto px-8">
         {/* Section header */}
         <div className="text-center mb-20">
-          <p className="font-mono text-sm text-neon-cyan tracking-widest mb-4">
+          <p className="font-mono text-sm text-sage-mid tracking-widest mb-4">
             THE PIPELINE
           </p>
           <h2 className="font-display text-4xl md:text-6xl font-bold text-white tracking-tight">
@@ -147,7 +147,7 @@ export default function Features() {
                 className="group relative"
                 style={{ transformStyle: 'preserve-3d' }}
               >
-                <div className="glass-panel rounded-xl p-6 md:p-8 transition-all duration-500 hover:border-neon-cyan/20 h-full">
+                <div className="glass-panel rounded-xl p-6 md:p-8 transition-all duration-500 hover:border-sage-mid/20 h-full">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-4">
@@ -191,7 +191,7 @@ export default function Features() {
                   {/* Arrow connector (except last) */}
                   {i < stages.length - 1 && (
                     <div className="hidden lg:flex absolute -bottom-3 left-1/2 -translate-x-1/2 z-20">
-                      <div className="w-6 h-6 rotate-45 bg-void border-r border-b border-neon-cyan/30" />
+                      <div className="w-6 h-6 rotate-45 bg-void border-r border-b border-sage-mid/30" />
                     </div>
                   )}
                 </div>
@@ -208,17 +208,17 @@ export default function Features() {
               <div className="w-8 h-px bg-white/20" />
               <div className="w-0 h-0 border-l-[5px] border-l-white/20 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent" />
             </div>
-            <span className="text-neon-cyan">AST</span>
+            <span className="text-sage-mid">AST</span>
             <div className="flex items-center gap-1">
               <div className="w-8 h-px bg-white/20" />
               <div className="w-0 h-0 border-l-[5px] border-l-white/20 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent" />
             </div>
-            <span className="text-neon-green">Bytecode</span>
+            <span className="text-sage-light">Bytecode</span>
             <div className="flex items-center gap-1">
               <div className="w-8 h-px bg-white/20" />
               <div className="w-0 h-0 border-l-[5px] border-l-white/20 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent" />
             </div>
-            <span className="text-neon-amber">Runtime</span>
+            <span className="text-amber">Runtime</span>
           </div>
         </div>
       </div>

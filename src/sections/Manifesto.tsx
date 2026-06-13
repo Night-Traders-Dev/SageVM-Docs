@@ -88,9 +88,9 @@ export default function Manifesto() {
 
         {/* Decorative elements */}
         <div className="flex justify-center gap-4 mt-16">
-          <div className="w-16 h-px bg-gradient-to-r from-transparent to-neon-cyan/50" />
-          <div className="w-2 h-2 rotate-45 border border-neon-cyan/50" />
-          <div className="w-16 h-px bg-gradient-to-l from-transparent to-neon-cyan/50" />
+          <div className="w-16 h-px bg-gradient-to-r from-transparent to-sage-mid/50" />
+          <div className="w-2 h-2 rotate-45 border border-sage-mid/50" />
+          <div className="w-16 h-px bg-gradient-to-l from-transparent to-sage-mid/50" />
         </div>
       </div>
     </section>

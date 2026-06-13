@@ -171,7 +171,7 @@ export default function Opcodes() {
       <div className="max-w-7xl mx-auto px-8">
         {/* Header */}
         <div className="text-center mb-16">
-          <p className="font-mono text-sm text-neon-cyan tracking-widest mb-4">
+          <p className="font-mono text-sm text-sage-mid tracking-widest mb-4">
             INSTRUCTION SET
           </p>
           <h2 className="font-display text-4xl md:text-6xl font-bold text-white tracking-tight">
@@ -192,7 +192,7 @@ export default function Opcodes() {
               placeholder="Search opcodes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-surface border border-white/[0.08] rounded-lg font-mono text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-neon-cyan/50 transition-colors"
+              className="w-full pl-10 pr-4 py-3 bg-surface border border-white/[0.08] rounded-lg font-mono text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-sage-mid/50 transition-colors"
             />
           </div>
         </div>
@@ -205,7 +205,7 @@ export default function Opcodes() {
               onClick={() => setActiveCategory(cat.id)}
               className={`px-4 py-2 rounded-lg font-mono text-xs transition-all duration-300 ${
                 activeCategory === cat.id
-                  ? 'bg-neon-cyan/15 text-neon-cyan border border-neon-cyan/30'
+                  ? 'bg-sage-mid/15 text-sage-mid border border-sage-mid/30'
                   : 'bg-white/[0.03] text-white/50 border border-transparent hover:border-white/[0.08] hover:text-white/80'
               }`}
             >
@@ -228,7 +228,7 @@ export default function Opcodes() {
                 key={op.name}
                 id={op.name}
                 className={`opcode-card glass-panel rounded-lg overflow-hidden transition-all duration-300 cursor-pointer ${
-                  isExpanded ? 'neon-border-cyan' : 'hover:border-white/[0.1]'
+                  isExpanded ? 'border-sage-mid' : 'hover:border-white/[0.1]'
                 }`}
                 onClick={() =>
                   setExpandedOpcode(isExpanded ? null : op.name)
@@ -266,7 +266,7 @@ export default function Opcodes() {
                         EXAMPLE:
                       </p>
                       <div className="code-block rounded p-2">
-                        <code className="font-mono text-xs text-neon-green">
+                        <code className="font-mono text-xs text-sage-light">
                           {op.example}
                         </code>
                       </div>
@@ -289,7 +289,7 @@ export default function Opcodes() {
         {/* Stats */}
         <div className="flex justify-center gap-8 mt-12">
           <div className="text-center">
-            <p className="font-display text-3xl font-bold text-neon-cyan">
+            <p className="font-display text-3xl font-bold text-sage-mid">
               60
             </p>
             <p className="font-mono text-xs text-white/40 mt-1">
@@ -298,14 +298,14 @@ export default function Opcodes() {
           </div>
           <div className="w-px bg-white/[0.08]" />
           <div className="text-center">
-            <p className="font-display text-3xl font-bold text-neon-green">
+            <p className="font-display text-3xl font-bold text-sage-light">
               28
             </p>
             <p className="font-mono text-xs text-white/40 mt-1">GPU Opcodes</p>
           </div>
           <div className="w-px bg-white/[0.08]" />
           <div className="text-center">
-            <p className="font-display text-3xl font-bold text-neon-amber">
+            <p className="font-display text-3xl font-bold text-amber">
               88
             </p>
             <p className="font-mono text-xs text-white/40 mt-1">Total</p>
