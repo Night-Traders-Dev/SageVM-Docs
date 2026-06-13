@@ -647,7 +647,7 @@ class SGVMInterpreter {
       }
       case 'OP_JUMP_IF_FALSE': {
         const cond = pop()
-        if (!cond || cond === 0 || cond === '' || cond === false || cond === null) {
+        if (!cond || cond === 0 || cond === '' || cond === null) {
           const offset = parseInt(operand, 16)
           s.pc += offset - 1
         }
