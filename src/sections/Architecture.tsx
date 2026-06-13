@@ -167,7 +167,7 @@ export default function DependencyGraph() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [scale, setScale] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
-  const [isDragging, setIsDragging] = useState(false)
+//  const [isDragging, setIsDragging] = useState(false)
   const [dragNode, setDragNode] = useState<string | null>(null)
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
