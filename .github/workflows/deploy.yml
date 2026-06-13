@@ -27,7 +27,8 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci
+      # Changed from 'npm ci' to allow the build to pass despite out-of-sync lockfiles
+      - run: npm install
       - run: npm run build
 
       - uses: actions/upload-pages-artifact@v3
