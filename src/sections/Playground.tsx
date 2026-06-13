@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { Play, StepForward, RotateCcw, Zap, Edit3, Code, Terminal, ChevronDown, ChevronRight, Bug, Download, Upload, Copy, Check } from 'lucide-react'
+import { Play, StepForward, RotateCcw, Zap, Edit3, Code, Terminal, ChevronDown, ChevronRight, Download, Upload, Copy, Check } from 'lucide-react'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -16,13 +16,13 @@ interface Program {
 }
 
 interface VMState {
-  stack: (string | number | null)[]
-  globals: Map<string, string | number | null>
+  stack: (string | number | boolean | null | unknown[] | Record<string, unknown>)[]
+  globals: Map<string, string | number | boolean | null | unknown[] | Record<string, unknown>>
   pc: number
   output: string[]
   halted: boolean
   callStack: { name: string; pc: number }[]
-  locals: Map<string, string | number | null>[]
+  locals: Map<string, string | number | boolean | null | unknown[] | Record<string, unknown>>[]
   envDepth: number
 }
 
@@ -230,9 +230,7 @@ function compileSageToBytecode(source: string): string[] {
   const lines = source.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith(';'))
   const bytecode: string[] = []
   let indentStack: number[] = [0]
-  let inFunction = false
-  let inClass = false
-  let loopBackTargets: number[] = []
+      let loopBackTargets: number[] = []
   let ifJumpTargets: number[] = []
 
   for (let i = 0; i < lines.length; i++) {
@@ -256,7 +254,6 @@ function compileSageToBytecode(source: string): string[] {
         const name = match[1]
         const params = match[2].split(',').filter(p => p.trim()).length
         bytecode.push(`OP_DEFINE_FUNCTION "${name}" ${params}`)
-        inFunction = true
         indentStack.push(indent)
       }
       continue
@@ -266,7 +263,6 @@ function compileSageToBytecode(source: string): string[] {
       const match = line.match(/class\s+(\w+)/)
       if (match) {
         bytecode.push(`OP_CLASS "${match[1]}"`)
-        inClass = true
         indentStack.push(indent)
       }
       continue
@@ -382,7 +378,6 @@ function compileExpression(expr: string, bytecode: string[]) {
   // Function call: name(args)
   const callMatch = expr.match(/^(\w+)\s*\(([^)]*)\)$/)
   if (callMatch) {
-    const name = callMatch[1]
     const args = callMatch[2].split(',').map(s => s.trim()).filter(Boolean)
     args.forEach(arg => compileExpression(arg, bytecode))
     bytecode.push(`OP_CALL ${args.length}`)
@@ -392,12 +387,10 @@ function compileExpression(expr: string, bytecode: string[]) {
   // Method call: obj.method(args)
   const methodMatch = expr.match(/^(\w+)\.(\w+)\s*\(([^)]*)\)$/)
   if (methodMatch) {
-    const obj = methodMatch[1]
-    const method = methodMatch[2]
     const args = methodMatch[3].split(',').map(s => s.trim()).filter(Boolean)
-    bytecode.push(`OP_GET_GLOBAL "${obj}"`)
+    bytecode.push(`OP_GET_GLOBAL "${methodMatch[1]}"`)
     args.forEach(arg => compileExpression(arg, bytecode))
-    bytecode.push(`OP_CALL_METHOD "${method}" ${args.length}`)
+    bytecode.push(`OP_CALL_METHOD "${methodMatch[2]}" ${args.length}`)
     return
   }
 
@@ -523,8 +516,8 @@ class SGVMInterpreter {
       val = operand
     }
 
-    const pop = () => s.stack.pop() ?? null
-    const push = (v: string | number | null) => s.stack.push(v)
+    const pop = (): string | number | boolean | null | unknown[] | Record<string, unknown> => s.stack.pop() ?? null
+    const push = (v: string | number | boolean | null | unknown[] | Record<string, unknown>) => s.stack.push(v)
     const top = () => s.stack[s.stack.length - 1] ?? null
 
     switch (opcode) {
@@ -535,10 +528,10 @@ class SGVMInterpreter {
         push(null)
         break
       case 'OP_TRUE':
-        push(true)
+        push(true as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       case 'OP_FALSE':
-        push(false)
+        push(false as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       case 'OP_POP':
         pop()
@@ -583,80 +576,80 @@ class SGVMInterpreter {
       case 'OP_EQUAL': {
         const b = pop()
         const a = pop()
-        push(a === b)
+        push((a === b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_NOT_EQUAL': {
         const b = pop()
         const a = pop()
-        push(a !== b)
+        push((a !== b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_GREATER': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push(a > b)
+        push((a > b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_GREATER_EQUAL': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push(a >= b)
+        push((a >= b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_LESS': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push(a < b)
+        push((a < b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_LESS_EQUAL': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push(a <= b)
+        push((a <= b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_BIT_AND': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push(a & b)
+        push((a & b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_BIT_OR': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push(a | b)
+        push((a | b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_BIT_XOR': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push(a ^ b)
+        push((a ^ b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_BIT_NOT': {
-        push(~(Number(pop()) || 0))
+        push((~(Number(pop()) || 0)) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_SHIFT_LEFT': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push(a << b)
+        push((a << b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_SHIFT_RIGHT': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push(a >> b)
+        push((a >> b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_NOT': {
-        push(!(pop()))
+        push((!(pop())) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_TRUTHY': {
         const v = pop()
-        push(!!v && v !== 0 && v !== '')
+        push((!!v && v !== 0 && v !== '') as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_JUMP': {
@@ -666,7 +659,7 @@ class SGVMInterpreter {
       }
       case 'OP_JUMP_IF_FALSE': {
         const cond = pop()
-        if (!cond || cond === 0 || cond === '') {
+        if (!cond || cond === 0 || cond === '' || cond === false || cond === null) {
           const offset = parseInt(operand, 16)
           s.pc += offset - 1
         }
@@ -691,46 +684,50 @@ class SGVMInterpreter {
         push(s.globals.get(val as string) ?? null)
         break
       case 'OP_GET_PROPERTY': {
-        const obj = pop() as Record<string, unknown>
-        push((obj?.[val as string] as string | number | null) ?? null)
+        const obj = pop()
+        const rec = typeof obj === 'object' && obj !== null && !Array.isArray(obj) ? (obj as unknown) as Record<string, unknown> : {}
+        push((rec[val as string] as string | number | boolean | null | unknown[] | Record<string, unknown> | undefined) ?? null)
         break
       }
       case 'OP_SET_PROPERTY': {
         const value = pop()
-        const obj = pop() as Record<string, unknown>
-        if (obj) obj[val as string] = value
+        const obj = pop()
+        if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+          ((obj as unknown) as Record<string, unknown>)[val as string] = value }
         break
       }
       case 'OP_GET_INDEX': {
         const idx = Number(pop()) || 0
-        const arr = pop() as (string | number | null)[]
-        push(arr?.[idx] ?? null)
+        const arr = pop()
+        const arr2 = Array.isArray(arr) ? arr as (string | number | boolean | null | unknown[] | Record<string, unknown>)[] : []
+        push(arr2[idx] ?? null)
         break
       }
       case 'OP_SET_INDEX': {
         const value = pop()
         const idx = Number(pop()) || 0
-        const arr = pop() as (string | number | null)[]
-        if (arr) arr[idx] = value
+        const arr = pop()
+        if (Array.isArray(arr)) {
+          (arr as (string | number | boolean | null | unknown[] | Record<string, unknown>)[])[idx] = value }
         break
       }
       case 'OP_ARRAY': {
         const count = Number(val) || 0
-        const arr: (string | number | null)[] = []
+        const arr: (string | number | boolean | null | unknown[] | Record<string, unknown>)[] = []
         for (let i = 0; i < count; i++) arr.unshift(pop())
         push(arr)
         break
       }
       case 'OP_TUPLE': {
         const count = Number(val) || 0
-        const tup: (string | number | null)[] = []
+        const tup: (string | number | boolean | null | unknown[] | Record<string, unknown>)[] = []
         for (let i = 0; i < count; i++) tup.unshift(pop())
         push(tup)
         break
       }
       case 'OP_DICT': {
         const count = Number(val) || 0
-        const dict: Record<string, string | number | null> = {}
+        const dict: Record<string, string | number | boolean | null | unknown[] | Record<string, unknown>> = {}
         for (let i = 0; i < count; i++) {
           const v = pop()
           const k = String(pop())
@@ -740,38 +737,36 @@ class SGVMInterpreter {
         break
       }
       case 'OP_ARRAY_LEN': {
-        const arr = pop() as unknown[]
-        push(arr?.length ?? 0)
+        const arr = pop()
+        push((Array.isArray(arr) ? (arr as unknown[]).length : 0) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_SLICE': {
         const end = Number(pop()) || 0
         const start = Number(pop()) || 0
-        const arr = pop() as unknown[]
-        push(arr?.slice(start, end) ?? [])
+        const arr = pop()
+        push((Array.isArray(arr) ? (arr as unknown[]).slice(start, end) : []) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_CALL': {
         const argCount = Number(val) || 0
-        const args: (string | number | null)[] = []
+        const args: (string | number | boolean | null | unknown[] | Record<string, unknown>)[] = []
         for (let i = 0; i < argCount; i++) args.unshift(pop())
         const func = pop()
-        // Simple built-in simulation
-        if (func === 'fib') {
+        if (func === 'fib' as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>) {
           const n = Number(args[0]) || 0
           const fib = (x: number): number => x <= 1 ? x : fib(x - 1) + fib(x - 2)
           push(fib(n))
-        } else if (func === 'range') {
+        } else if (func === 'range' as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>) {
           const n = Number(args[0]) || 0
-          push(Array.from({ length: n }, (_, i) => i))
-        } else if (func === 'len') {
-          const arr = args[0] as unknown[]
-          push(arr?.length ?? 0)
+          push(Array.from({ length: n }, (_, i) => i) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        } else if (func === 'len' as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>) {
+          const arr = args[0]
+          push((Array.isArray(arr) ? (arr as unknown[]).length : 0) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         } else if (typeof func === 'object' && func !== null) {
-          // Constructor call
-          const cls = func as Record<string, unknown>
+          const cls = typeof func === 'object' && func !== null ? (func as unknown) as Record<string, unknown> : {}
           const instance = { ...cls }
-          push(instance)
+          push(instance as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         } else {
           push(null)
         }
@@ -780,24 +775,29 @@ class SGVMInterpreter {
       case 'OP_CALL_METHOD': {
         const methodName = parts[1]?.replace(/"/g, '') || ''
         const argCount = Number(parts[2]) || 0
-        const args: (string | number | null)[] = []
+        const args: (string | number | boolean | null | unknown[] | Record<string, unknown>)[] = []
         for (let i = 0; i < argCount; i++) args.unshift(pop())
-        const instance = pop() as Record<string, unknown>
-        if (methodName === 'move' && instance) {
-          instance.x = (Number(instance.x) || 0) + (Number(args[0]) || 0)
-          instance.y = (Number(instance.y) || 0) + (Number(args[1]) || 0)
+        const instance = pop()
+        if (methodName === 'move' && typeof instance === 'object' && instance !== null) {
+          const rec = typeof instance === 'object' && instance !== null ? (instance as unknown) as Record<string, unknown> : {}
+          rec.x = (Number(rec.x) || 0) + (Number(args[0]) || 0)
+          rec.y = (Number(rec.y) || 0) + (Number(args[1]) || 0)
+          push(rec as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        } else {
+          push(instance)
         }
-        push(instance)
         break
       }
       case 'OP_CLASS': {
-        push({ __type__: 'class', name: val })
+        push({ __type__: 'class', name: val } as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       }
       case 'OP_METHOD':
         // Methods are stored in the class dict
+        void val
         break
       case 'OP_INHERIT':
+        void val
         break
       case 'OP_PUSH_ENV':
         s.locals.push(new Map())
@@ -819,19 +819,26 @@ class SGVMInterpreter {
         s.halted = true
         break
       case 'OP_DEFINE_FUNCTION':
-        // Store function reference
+        // Store function reference: val is the function name
+        void val
         break
       case 'OP_LOAD_FUNCTION':
         push(val as string)
         break
       case 'OP_IMPORT':
-        push({ __module__: val })
+        push({ __module__: val } as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
         break
       case 'OP_BREAK':
       case 'OP_CONTINUE':
+        void val
+        s.output.push(`[CTRL] ${opcode} not supported in playground`)
+        break
       case 'OP_SETUP_TRY':
       case 'OP_END_TRY':
       case 'OP_RAISE':
+        void val
+        s.output.push(`[EXC] ${opcode} not supported in playground`)
+        break
       case 'OP_GPU_POLL_EVENTS':
       case 'OP_GPU_WINDOW_SHOULD_CLOSE':
       case 'OP_GPU_GET_TIME':
@@ -860,9 +867,11 @@ class SGVMInterpreter {
       case 'OP_GPU_UPDATE_UNIFORM':
       case 'OP_GPU_CMD_PUSH_CONST':
       case 'OP_GPU_CMD_DISPATCH':
+        void val
         s.output.push(`[GPU] ${opcode} not supported in playground`)
         break
       default:
+        void val
         s.output.push(`[WARN] Unknown opcode: ${opcode}`)
     }
 
@@ -877,8 +886,8 @@ export default function Playground() {
   const [isRunning, setIsRunning] = useState(false)
   const [currentStep, setCurrentStep] = useState(-1)
   const [consoleOutput, setConsoleOutput] = useState<string[]>([])
-  const [stack, setStack] = useState<(string | number | null)[]>([])
-  const [globals, setGlobals] = useState<Map<string, string | number | null>>(new Map())
+  const [stack, setStack] = useState<(string | number | boolean | null | unknown[] | Record<string, unknown>)[]>([])
+  const [globals, setGlobals] = useState<Map<string, string | number | boolean | null | unknown[] | Record<string, unknown>>>(new Map())
   const [customSage, setCustomSage] = useState('')
   const [customBytecode, setCustomBytecode] = useState('')
   const [isHalted, setIsHalted] = useState(false)
@@ -1238,7 +1247,7 @@ export default function Playground() {
                   </p>
                 ) : (
                   <div className="flex flex-col-reverse gap-2">
-                    {stack.map((val, i) => (
+                    {stack.map((val: string | number | boolean | null | unknown[] | Record<string, unknown>, i: number) => (
                       <div
                         key={`${i}-${val}`}
                         className="border border-sage-light/30 rounded-lg px-4 py-2.5 bg-sage-light/5 animate-in fade-in slide-in-from-bottom-2"
@@ -1276,7 +1285,7 @@ export default function Playground() {
                     </p>
                   ) : (
                     <div className="grid grid-cols-2 gap-2">
-                      {Array.from(globals.entries()).map(([k, v]) => (
+                      {Array.from(globals.entries()).map(([k, v]: [string, string | number | boolean | null | unknown[] | Record<string, unknown>]) => (
                         <div key={k} className="bg-white/[0.03] rounded px-3 py-2">
                           <span className="text-white/40 text-[10px] font-mono">{k}</span>
                           <p className="text-white/70 text-xs font-mono truncate">
