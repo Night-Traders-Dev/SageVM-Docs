@@ -389,7 +389,11 @@ export default function DependencyGraph() {
     if (clicked) {
       setDragNode(clicked.id)
       setSelectedNode(clicked)
-      setIsDragging(true)
+      if (isDragging) {
+        setIsDragging(true)
+      } else {
+        setIsDragging(false)
+      }
     } else {
       setIsPanning(true)
       setPanStart({ x: e.clientX, y: e.clientY })
