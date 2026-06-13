@@ -7,6 +7,9 @@ import { Play, StepForward, RotateCcw, Zap, Edit3, Code, Terminal, ChevronDown, 
 
 gsap.registerPlugin(ScrollTrigger)
 
+// ─── Type Alias ───
+type VMValue = string | number | boolean | null | unknown[] | Record<string, unknown>
+
 // ─── Types ───
 interface Program {
   name: string
@@ -16,13 +19,13 @@ interface Program {
 }
 
 interface VMState {
-  stack: (string | number | boolean | null | unknown[] | Record<string, unknown>)[]
-  globals: Map<string, string | number | boolean | null | unknown[] | Record<string, unknown>>
+  stack: VMValue[]
+  globals: Map<string, VMValue>
   pc: number
   output: string[]
   halted: boolean
   callStack: { name: string; pc: number }[]
-  locals: Map<string, string | number | boolean | null | unknown[] | Record<string, unknown>>[]
+  locals: Map<string, VMValue>[]
   envDepth: number
 }
 
@@ -32,8 +35,7 @@ const SAMPLE_PROGRAMS: Program[] = [
     name: 'Hello World',
     sage: `proc main():
     print "Hello, SageVM!"
-    return 0
-end`,
+    return 0`,
     bytecode: [
       'OP_CONSTANT "Hello, SageVM!"',
       'OP_PRINT',
@@ -48,8 +50,7 @@ end`,
     var y = 20
     var result = x + y * 2
     print result
-    return result
-end`,
+    return result`,
     bytecode: [
       'OP_CONSTANT 10',
       'OP_DEFINE_GLOBAL "x"',
@@ -225,19 +226,19 @@ end`,
   }
 ]
 
-// ─── Simple Sage-to-Bytecode Compiler (for playground demos) ───
+// ─── Simple Sage-to-Bytecode Compiler ───
 function compileSageToBytecode(source: string): string[] {
   const lines = source.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith(';'))
   const bytecode: string[] = []
-  let indentStack: number[] = [0]
-      let loopBackTargets: number[] = []
-  let ifJumpTargets: number[] = []
+  const indentStack: number[] = [0]
+  const loopBackTargets: number[] = []
+  const ifJumpTargets: number[] = []
+  let hasClass = false
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     const indent = line.match(/^(\s*)/)?.[1].length || 0
 
-    // Handle dedent (end blocks)
     while (indent < indentStack[indentStack.length - 1]) {
       indentStack.pop()
       if (loopBackTargets.length > 0) {
@@ -248,12 +249,11 @@ function compileSageToBytecode(source: string): string[] {
       }
     }
 
-    if (line.startsWith('proc ') && line.includes('(')) {
+    if (line.startsWith('proc ') && line.includes('(') && !hasClass) {
       const match = line.match(/proc\s+(\w+)\s*\(([^)]*)\)/)
       if (match) {
-        const name = match[1]
         const params = match[2].split(',').filter(p => p.trim()).length
-        bytecode.push(`OP_DEFINE_FUNCTION "${name}" ${params}`)
+        bytecode.push(`OP_DEFINE_FUNCTION "${match[1]}" ${params}`)
         indentStack.push(indent)
       }
       continue
@@ -263,12 +263,13 @@ function compileSageToBytecode(source: string): string[] {
       const match = line.match(/class\s+(\w+)/)
       if (match) {
         bytecode.push(`OP_CLASS "${match[1]}"`)
+        hasClass = true
         indentStack.push(indent)
       }
       continue
     }
 
-    if (line.startsWith('proc ') && inClass) {
+    if (line.startsWith('proc ') && hasClass) {
       const match = line.match(/proc\s+(\w+)\s*\(/)
       if (match) {
         bytecode.push(`OP_METHOD "${match[1]}"`)
@@ -279,7 +280,7 @@ function compileSageToBytecode(source: string): string[] {
     if (line.startsWith('if ')) {
       const cond = line.replace(/^if\s+/, '').replace(/:$/, '').trim()
       compileExpression(cond, bytecode)
-      bytecode.push('OP_JUMP_IF_FALSE 0x0000') // placeholder
+      bytecode.push('OP_JUMP_IF_FALSE 0x0000')
       ifJumpTargets.push(bytecode.length - 1)
       indentStack.push(indent)
       continue
@@ -288,14 +289,12 @@ function compileSageToBytecode(source: string): string[] {
     if (line.startsWith('for ') && line.includes('in range')) {
       const match = line.match(/for\s+(\w+)\s+in\s+range\s*\(([^)]+)\)/)
       if (match) {
-        const varName = match[1]
-        const rangeExpr = match[2]
-        compileExpression(rangeExpr, bytecode)
-        bytecode.push(`OP_DEFINE_GLOBAL "${varName}"`)
+        compileExpression(match[2], bytecode)
+        bytecode.push(`OP_DEFINE_GLOBAL "${match[1]}"`)
         bytecode.push(`OP_CONSTANT 0`)
-        bytecode.push(`OP_DEFINE_GLOBAL "${varName}"`) // init counter
+        bytecode.push(`OP_DEFINE_GLOBAL "${match[1]}"`)
         loopBackTargets.push(bytecode.length)
-        bytecode.push(`OP_GET_GLOBAL "${varName}"`)
+        bytecode.push(`OP_GET_GLOBAL "${match[1]}"`)
         bytecode.push(`OP_LESS`)
         bytecode.push('OP_JUMP_IF_FALSE 0x0000')
         ifJumpTargets.push(bytecode.length - 1)
@@ -323,12 +322,14 @@ function compileSageToBytecode(source: string): string[] {
     }
 
     if (line.includes('=') && !line.includes('==')) {
-      const [lhs, rhs] = line.split('=').map(s => s.trim())
+      const parts = line.split('=')
+      const lhs = parts[0].trim()
+      const rhs = parts.slice(1).join('=').trim()
       if (lhs && rhs) {
         compileExpression(rhs, bytecode)
         if (lhs.includes('.')) {
-          const [obj, prop] = lhs.split('.')
-          bytecode.push(`OP_SET_PROPERTY "${prop}"`)
+          const dotParts = lhs.split('.')
+          bytecode.push(`OP_SET_PROPERTY "${dotParts[1]}"`)
         } else if (lhs.includes('[')) {
           bytecode.push(`OP_SET_INDEX`)
         } else {
@@ -338,11 +339,9 @@ function compileSageToBytecode(source: string): string[] {
       continue
     }
 
-    // Expression statement
     compileExpression(line.replace(/:$/, '').trim(), bytecode)
   }
 
-  // Patch jump targets
   ifJumpTargets.forEach(idx => {
     const offset = (bytecode.length - idx).toString(16).padStart(4, '0')
     bytecode[idx] = bytecode[idx].replace('0x0000', `0x${offset}`)
@@ -355,19 +354,16 @@ function compileSageToBytecode(source: string): string[] {
 function compileExpression(expr: string, bytecode: string[]) {
   expr = expr.trim()
 
-  // String literal
   if (expr.startsWith('"') && expr.endsWith('"')) {
     bytecode.push(`OP_CONSTANT ${expr}`)
     return
   }
 
-  // Number
   if (!isNaN(Number(expr)) && expr !== '') {
     bytecode.push(`OP_CONSTANT ${expr}`)
     return
   }
 
-  // Array literal [a, b, c]
   if (expr.startsWith('[') && expr.endsWith(']')) {
     const items = expr.slice(1, -1).split(',').map(s => s.trim()).filter(Boolean)
     items.forEach(item => compileExpression(item, bytecode))
@@ -375,7 +371,6 @@ function compileExpression(expr: string, bytecode: string[]) {
     return
   }
 
-  // Function call: name(args)
   const callMatch = expr.match(/^(\w+)\s*\(([^)]*)\)$/)
   if (callMatch) {
     const args = callMatch[2].split(',').map(s => s.trim()).filter(Boolean)
@@ -384,7 +379,6 @@ function compileExpression(expr: string, bytecode: string[]) {
     return
   }
 
-  // Method call: obj.method(args)
   const methodMatch = expr.match(/^(\w+)\.(\w+)\s*\(([^)]*)\)$/)
   if (methodMatch) {
     const args = methodMatch[3].split(',').map(s => s.trim()).filter(Boolean)
@@ -394,7 +388,6 @@ function compileExpression(expr: string, bytecode: string[]) {
     return
   }
 
-  // Property access: obj.prop
   const propMatch = expr.match(/^(\w+)\.(\w+)$/)
   if (propMatch) {
     bytecode.push(`OP_GET_GLOBAL "${propMatch[1]}"`)
@@ -402,7 +395,6 @@ function compileExpression(expr: string, bytecode: string[]) {
     return
   }
 
-  // Index access: arr[i]
   const indexMatch = expr.match(/^(\w+)\[(\w+)\]$/)
   if (indexMatch) {
     bytecode.push(`OP_GET_GLOBAL "${indexMatch[1]}"`)
@@ -411,7 +403,6 @@ function compileExpression(expr: string, bytecode: string[]) {
     return
   }
 
-  // Binary operations
   const ops = [
     { op: '+', opcode: 'OP_ADD' },
     { op: '-', opcode: 'OP_SUB' },
@@ -429,7 +420,6 @@ function compileExpression(expr: string, bytecode: string[]) {
     }
   }
 
-  // Comparison
   const comps = [
     { op: '==', opcode: 'OP_EQUAL' },
     { op: '!=', opcode: 'OP_NOT_EQUAL' },
@@ -450,13 +440,11 @@ function compileExpression(expr: string, bytecode: string[]) {
     }
   }
 
-  // Variable reference
   if (/^\w+$/.test(expr)) {
     bytecode.push(`OP_GET_GLOBAL "${expr}"`)
     return
   }
 
-  // len() builtin
   if (expr.startsWith('len(')) {
     const inner = expr.slice(4, -1).trim()
     bytecode.push(`OP_GET_GLOBAL "${inner}"`)
@@ -507,7 +495,7 @@ class SGVMInterpreter {
     const opcode = parts[0]
     const operand = parts.slice(1).join(' ').split(';')[0].trim()
 
-    let val: string | number | null = null
+    let val: VMValue = null
     if (operand.startsWith('"') && operand.endsWith('"')) {
       val = operand.slice(1, -1)
     } else if (!isNaN(Number(operand)) && operand !== '') {
@@ -516,8 +504,8 @@ class SGVMInterpreter {
       val = operand
     }
 
-    const pop = (): string | number | boolean | null | unknown[] | Record<string, unknown> => s.stack.pop() ?? null
-    const push = (v: string | number | boolean | null | unknown[] | Record<string, unknown>) => s.stack.push(v)
+    const pop = (): VMValue => s.stack.pop() ?? null
+    const push = (v: VMValue) => s.stack.push(v)
     const top = () => s.stack[s.stack.length - 1] ?? null
 
     switch (opcode) {
@@ -528,10 +516,10 @@ class SGVMInterpreter {
         push(null)
         break
       case 'OP_TRUE':
-        push(true as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push(true as VMValue)
         break
       case 'OP_FALSE':
-        push(false as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push(false as VMValue)
         break
       case 'OP_POP':
         pop()
@@ -576,80 +564,80 @@ class SGVMInterpreter {
       case 'OP_EQUAL': {
         const b = pop()
         const a = pop()
-        push((a === b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push((a === b) as VMValue)
         break
       }
       case 'OP_NOT_EQUAL': {
         const b = pop()
         const a = pop()
-        push((a !== b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push((a !== b) as VMValue)
         break
       }
       case 'OP_GREATER': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push((a > b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push((a > b) as VMValue)
         break
       }
       case 'OP_GREATER_EQUAL': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push((a >= b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push((a >= b) as VMValue)
         break
       }
       case 'OP_LESS': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push((a < b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push((a < b) as VMValue)
         break
       }
       case 'OP_LESS_EQUAL': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push((a <= b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push((a <= b) as VMValue)
         break
       }
       case 'OP_BIT_AND': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push((a & b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push(a & b)
         break
       }
       case 'OP_BIT_OR': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push((a | b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push(a | b)
         break
       }
       case 'OP_BIT_XOR': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push((a ^ b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push(a ^ b)
         break
       }
       case 'OP_BIT_NOT': {
-        push((~(Number(pop()) || 0)) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push(~(Number(pop()) || 0))
         break
       }
       case 'OP_SHIFT_LEFT': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push((a << b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push(a << b)
         break
       }
       case 'OP_SHIFT_RIGHT': {
         const b = Number(pop()) || 0
         const a = Number(pop()) || 0
-        push((a >> b) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push(a >> b)
         break
       }
       case 'OP_NOT': {
-        push((!(pop())) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push((!pop()) as VMValue)
         break
       }
       case 'OP_TRUTHY': {
         const v = pop()
-        push((!!v && v !== 0 && v !== '') as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push((!!v && v !== 0 && v !== '') as VMValue)
         break
       }
       case 'OP_JUMP': {
@@ -686,20 +674,21 @@ class SGVMInterpreter {
       case 'OP_GET_PROPERTY': {
         const obj = pop()
         const rec = typeof obj === 'object' && obj !== null && !Array.isArray(obj) ? (obj as unknown) as Record<string, unknown> : {}
-        push((rec[val as string] as string | number | boolean | null | unknown[] | Record<string, unknown> | undefined) ?? null)
+        push((rec[val as string] as VMValue | undefined) ?? null)
         break
       }
       case 'OP_SET_PROPERTY': {
         const value = pop()
         const obj = pop()
         if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
-          ((obj as unknown) as Record<string, unknown>)[val as string] = value }
+          (obj as unknown as Record<string, unknown>)[val as string] = value
+        }
         break
       }
       case 'OP_GET_INDEX': {
         const idx = Number(pop()) || 0
         const arr = pop()
-        const arr2 = Array.isArray(arr) ? arr as (string | number | boolean | null | unknown[] | Record<string, unknown>)[] : []
+        const arr2 = Array.isArray(arr) ? arr as VMValue[] : []
         push(arr2[idx] ?? null)
         break
       }
@@ -708,26 +697,27 @@ class SGVMInterpreter {
         const idx = Number(pop()) || 0
         const arr = pop()
         if (Array.isArray(arr)) {
-          (arr as (string | number | boolean | null | unknown[] | Record<string, unknown>)[])[idx] = value }
+          (arr as VMValue[])[idx] = value
+        }
         break
       }
       case 'OP_ARRAY': {
         const count = Number(val) || 0
-        const arr: (string | number | boolean | null | unknown[] | Record<string, unknown>)[] = []
+        const arr: VMValue[] = []
         for (let i = 0; i < count; i++) arr.unshift(pop())
         push(arr)
         break
       }
       case 'OP_TUPLE': {
         const count = Number(val) || 0
-        const tup: (string | number | boolean | null | unknown[] | Record<string, unknown>)[] = []
+        const tup: VMValue[] = []
         for (let i = 0; i < count; i++) tup.unshift(pop())
         push(tup)
         break
       }
       case 'OP_DICT': {
         const count = Number(val) || 0
-        const dict: Record<string, string | number | boolean | null | unknown[] | Record<string, unknown>> = {}
+        const dict: Record<string, VMValue> = {}
         for (let i = 0; i < count; i++) {
           const v = pop()
           const k = String(pop())
@@ -738,35 +728,35 @@ class SGVMInterpreter {
       }
       case 'OP_ARRAY_LEN': {
         const arr = pop()
-        push((Array.isArray(arr) ? (arr as unknown[]).length : 0) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push((Array.isArray(arr) ? (arr as unknown[]).length : 0) as VMValue)
         break
       }
       case 'OP_SLICE': {
         const end = Number(pop()) || 0
         const start = Number(pop()) || 0
         const arr = pop()
-        push((Array.isArray(arr) ? (arr as unknown[]).slice(start, end) : []) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push((Array.isArray(arr) ? (arr as unknown[]).slice(start, end) : []) as VMValue)
         break
       }
       case 'OP_CALL': {
         const argCount = Number(val) || 0
-        const args: (string | number | boolean | null | unknown[] | Record<string, unknown>)[] = []
+        const args: VMValue[] = []
         for (let i = 0; i < argCount; i++) args.unshift(pop())
         const func = pop()
-        if (func === 'fib' as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>) {
+        if (func === 'fib') {
           const n = Number(args[0]) || 0
           const fib = (x: number): number => x <= 1 ? x : fib(x - 1) + fib(x - 2)
           push(fib(n))
-        } else if (func === 'range' as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>) {
+        } else if (func === 'range') {
           const n = Number(args[0]) || 0
-          push(Array.from({ length: n }, (_, i) => i) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
-        } else if (func === 'len' as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>) {
+          push(Array.from({ length: n }, (_, i) => i) as VMValue)
+        } else if (func === 'len') {
           const arr = args[0]
-          push((Array.isArray(arr) ? (arr as unknown[]).length : 0) as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+          push((Array.isArray(arr) ? (arr as unknown[]).length : 0) as VMValue)
         } else if (typeof func === 'object' && func !== null) {
-          const cls = typeof func === 'object' && func !== null ? (func as unknown) as Record<string, unknown> : {}
+          const cls = (func as unknown) as Record<string, unknown>
           const instance = { ...cls }
-          push(instance as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+          push(instance as VMValue)
         } else {
           push(null)
         }
@@ -775,29 +765,26 @@ class SGVMInterpreter {
       case 'OP_CALL_METHOD': {
         const methodName = parts[1]?.replace(/"/g, '') || ''
         const argCount = Number(parts[2]) || 0
-        const args: (string | number | boolean | null | unknown[] | Record<string, unknown>)[] = []
+        const args: VMValue[] = []
         for (let i = 0; i < argCount; i++) args.unshift(pop())
         const instance = pop()
         if (methodName === 'move' && typeof instance === 'object' && instance !== null) {
-          const rec = typeof instance === 'object' && instance !== null ? (instance as unknown) as Record<string, unknown> : {}
+          const rec = (instance as unknown) as Record<string, unknown>
           rec.x = (Number(rec.x) || 0) + (Number(args[0]) || 0)
           rec.y = (Number(rec.y) || 0) + (Number(args[1]) || 0)
-          push(rec as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+          push(rec as VMValue)
         } else {
           push(instance)
         }
         break
       }
       case 'OP_CLASS': {
-        push({ __type__: 'class', name: val } as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
+        push({ __type__: 'class', name: val } as VMValue)
         break
       }
       case 'OP_METHOD':
-        // Methods are stored in the class dict
-        void val
-        break
       case 'OP_INHERIT':
-        void val
+      case 'OP_DEFINE_FUNCTION':
         break
       case 'OP_PUSH_ENV':
         s.locals.push(new Map())
@@ -813,30 +800,16 @@ class SGVMInterpreter {
         break
       }
       case 'OP_RETURN':
-        s.halted = true
-        break
       case 'OP_HALT':
         s.halted = true
         break
-      case 'OP_DEFINE_FUNCTION':
-        // Store function reference: val is the function name
-        void val
-        break
-      case 'OP_LOAD_FUNCTION':
-        push(val as string)
-        break
-      case 'OP_IMPORT':
-        push({ __module__: val } as unknown as string | number | boolean | null | unknown[] | Record<string, unknown>)
-        break
       case 'OP_BREAK':
       case 'OP_CONTINUE':
-        void val
         s.output.push(`[CTRL] ${opcode} not supported in playground`)
         break
       case 'OP_SETUP_TRY':
       case 'OP_END_TRY':
       case 'OP_RAISE':
-        void val
         s.output.push(`[EXC] ${opcode} not supported in playground`)
         break
       case 'OP_GPU_POLL_EVENTS':
@@ -867,11 +840,9 @@ class SGVMInterpreter {
       case 'OP_GPU_UPDATE_UNIFORM':
       case 'OP_GPU_CMD_PUSH_CONST':
       case 'OP_GPU_CMD_DISPATCH':
-        void val
         s.output.push(`[GPU] ${opcode} not supported in playground`)
         break
       default:
-        void val
         s.output.push(`[WARN] Unknown opcode: ${opcode}`)
     }
 
@@ -886,8 +857,8 @@ export default function Playground() {
   const [isRunning, setIsRunning] = useState(false)
   const [currentStep, setCurrentStep] = useState(-1)
   const [consoleOutput, setConsoleOutput] = useState<string[]>([])
-  const [stack, setStack] = useState<(string | number | boolean | null | unknown[] | Record<string, unknown>)[]>([])
-  const [globals, setGlobals] = useState<Map<string, string | number | boolean | null | unknown[] | Record<string, unknown>>>(new Map())
+  const [stack, setStack] = useState<VMValue[]>([])
+  const [globals, setGlobals] = useState<Map<string, VMValue>>(new Map())
   const [customSage, setCustomSage] = useState('')
   const [customBytecode, setCustomBytecode] = useState('')
   const [isHalted, setIsHalted] = useState(false)
@@ -953,7 +924,6 @@ export default function Playground() {
       const stepIdx = vm.state.pc
       setCurrentStep(stepIdx)
 
-      // Animate current line
       if (bytecodeRefs.current[stepIdx]) {
         gsap.fromTo(
           bytecodeRefs.current[stepIdx],
@@ -1205,7 +1175,6 @@ export default function Playground() {
                 Reset
               </button>
 
-              {/* Speed Control */}
               <div className="flex items-center gap-2 ml-auto">
                 <span className="text-white/30 text-[10px] font-mono">SPEED</span>
                 <input
@@ -1247,10 +1216,10 @@ export default function Playground() {
                   </p>
                 ) : (
                   <div className="flex flex-col-reverse gap-2">
-                    {stack.map((val: string | number | boolean | null | unknown[] | Record<string, unknown>, i: number) => (
+                    {stack.map((val, i) => (
                       <div
-                        key={`${i}-${val}`}
-                        className="border border-sage-light/30 rounded-lg px-4 py-2.5 bg-sage-light/5 animate-in fade-in slide-in-from-bottom-2"
+                        key={`${i}-${String(val)}`}
+                        className="border border-sage-light/30 rounded-lg px-4 py-2.5 bg-sage-light/5"
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-mono text-xs text-sage-light">
@@ -1285,7 +1254,7 @@ export default function Playground() {
                     </p>
                   ) : (
                     <div className="grid grid-cols-2 gap-2">
-                      {Array.from(globals.entries()).map(([k, v]: [string, string | number | boolean | null | unknown[] | Record<string, unknown>]) => (
+                      {Array.from(globals.entries()).map(([k, v]) => (
                         <div key={k} className="bg-white/[0.03] rounded px-3 py-2">
                           <span className="text-white/40 text-[10px] font-mono">{k}</span>
                           <p className="text-white/70 text-xs font-mono truncate">
@@ -1313,7 +1282,7 @@ export default function Playground() {
                 ) : (
                   <div className="space-y-1">
                     {consoleOutput.map((line, i) => (
-                      <p key={i} className="font-mono text-xs text-white/80 animate-in fade-in">
+                      <p key={i} className="font-mono text-xs text-white/80">
                         {line}
                       </p>
                     ))}
