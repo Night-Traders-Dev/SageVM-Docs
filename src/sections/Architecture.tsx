@@ -33,7 +33,7 @@ const INITIAL_NODES: Node[] = [
     vx: 0,
     vy: 0,
     radius: 45,
-    description: "Core utilities: SGVMUtils class, all 88 opcode constants, byte packing helpers",
+    description: "Core utilities: SGVMUtils class, all 89 opcode constants, byte packing helpers",
     lines: 180,
     imports: []
   },
@@ -59,7 +59,7 @@ const INITIAL_NODES: Node[] = [
     vx: 0,
     vy: 0,
     radius: 55,
-    description: "MetalVM interpreter: stack machine, 88 opcode dispatch, delegation bridge",
+    description: "MetalVM interpreter: stack machine, 89 opcode dispatch, delegation bridge",
     lines: 890,
     imports: ["sgvm_core", "math", "io", "net", "thread", "sys", "gpu", "ml_native"]
   },
