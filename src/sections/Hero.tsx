@@ -228,7 +228,7 @@ export default function Hero() {
             {/* Standardized simple node alignments across layouts */}
             <div className="text-left md:text-right mt-2 md:mt-0 border-t border-white/10 md:border-none pt-3 md:pt-0">
               <p className="font-mono text-[10px] md:text-xs text-white/60">
-                Sage General Virtual Machine // v0.9.3
+                Sage General Virtual Machine // v0.9.4
               </p>
               <div className="flex items-center gap-2 mt-1 justify-start md:justify-end">
                 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
