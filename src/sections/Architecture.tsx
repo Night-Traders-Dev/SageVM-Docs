@@ -34,7 +34,7 @@ const INITIAL_NODES: Node[] = [
     vy: 0,
     radius: 45,
     description: "Core utilities: SGVMUtils class, all 89 opcode constants, byte packing helpers",
-    lines: 180,
+    lines: 230,
     imports: []
   },
   {
@@ -47,7 +47,7 @@ const INITIAL_NODES: Node[] = [
     vy: 0,
     radius: 50,
     description: "Bytecode compiler: AST -> .sgvm binary, constant pool, chunk management",
-    lines: 520,
+    lines: 420,
     imports: ["sgvm_core"]
   },
   {
@@ -73,7 +73,7 @@ const INITIAL_NODES: Node[] = [
     vy: 0,
     radius: 35,
     description: "Entrypoint: CLI arg parsing, .sgvm file loading, shebang skip, debug flag",
-    lines: 140,
+    lines: 170,
     imports: ["sgvm_vm"]
   },
   {
@@ -86,7 +86,7 @@ const INITIAL_NODES: Node[] = [
     vy: 0,
     radius: 35,
     description: "Compiler entrypoint: CLI args, --shebang flag, invokes SGVMCompiler",
-    lines: 55,
+    lines: 75,
     imports: ["sgvm_compiler"]
   },
   {

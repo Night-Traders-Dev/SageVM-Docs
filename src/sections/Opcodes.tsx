@@ -5,7 +5,7 @@ import { Search, Terminal } from 'lucide-react'
 
 gsap.registerPlugin(ScrollTrigger)
 
-type Category = 'all' | 'stack' | 'arithmetic' | 'comparison' | 'bitwise' | 'control' | 'memory' | 'oop' | 'exception' | 'gpu'
+type Category = 'all' | 'stack' | 'arithmetic' | 'comparison' | 'bitwise' | 'control' | 'memory' | 'oop' | 'exception' | 'gpu' | 'math'
 
 interface Opcode {
   name: string
@@ -26,6 +26,7 @@ const categories: { id: Category; label: string }[] = [
   { id: 'oop', label: 'OOP' },
   { id: 'exception', label: 'Exception' },
   { id: 'gpu', label: 'GPU' },
+  { id: 'math', label: 'Math' },
 ]
 
 const opcodes: Opcode[] = [
@@ -136,6 +137,9 @@ const opcodes: Opcode[] = [
   { name: 'OP_GPU_CMD_PUSH_CONST', value: '0x55', description: 'Push constants to shader (small fast uniforms)', category: 'gpu', example: 'OP_GPU_CMD_PUSH_CONST 0x0000  ; Push constants to shader' },
   { name: 'OP_GPU_CMD_DISPATCH', value: '0x56', description: 'Dispatch compute shader [groups_x, groups_y, groups_z]', category: 'gpu', example: 'OP_GPU_CMD_DISPATCH 8 8 1  ; dispatch(8,8,1) compute' },
 
+  // Math Extensions (0x57)
+  { name: 'OP_MATH_PRINTM', value: '0x57', description: 'Print a matrix (array of arrays) in a formatted grid', category: 'math', example: 'OP_MATH_PRINTM  ; Print formatted [[1,2],[3,4]]' },
+
   // Halt (0xFF)
   { name: 'OP_HALT', value: '0xFF', description: 'Halt VM execution immediately', category: 'control', example: 'OP_HALT  ; Stop execution, return exit code' },
 ]
@@ -182,6 +186,7 @@ export default function Opcodes() {
     oop: '#cc66ff',
     exception: '#ff6699',
     gpu: '#ffcc00',
+    math: '#00ffaa',
   }
 
   return (
@@ -200,7 +205,7 @@ export default function Opcodes() {
             Opcode Reference
           </h2>
           <p className="font-body text-white/50 mt-4 max-w-2xl mx-auto">
-            60 general-purpose opcodes plus 28 GPU opcodes. Full parity with
+            61 general-purpose opcodes plus 28 GPU opcodes. Full parity with
             SageLang v3.6.5 MetalVM. Every opcode includes a usage example.
           </p>
         </div>
@@ -312,7 +317,7 @@ export default function Opcodes() {
         <div className="flex justify-center gap-8 mt-12">
           <div className="text-center">
             <p className="font-display text-3xl font-bold text-sage-mid">
-              60
+              61
             </p>
             <p className="font-mono text-xs text-white/40 mt-1">
               General Opcodes
@@ -328,14 +333,14 @@ export default function Opcodes() {
           <div className="w-px bg-white/[0.08]" />
           <div className="text-center">
             <p className="font-display text-3xl font-bold text-amber">
-              88
+              89
             </p>
             <p className="font-mono text-xs text-white/40 mt-1">Total</p>
           </div>
           <div className="w-px bg-white/[0.08]" />
           <div className="text-center">
             <p className="font-display text-3xl font-bold text-sage-mid">
-              88
+              89
             </p>
             <p className="font-mono text-xs text-white/40 mt-1">
               With Examples
