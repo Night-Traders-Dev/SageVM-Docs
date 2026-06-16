@@ -58,7 +58,7 @@ export default function Footer() {
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-sage-light animate-pulse" />
               <span className="font-mono text-xs text-white/40">
-               v0.9.4 — Active Development
+               v0.9.4 — Active Development (JIT Phase 4)
               </span>
 
             </div>
