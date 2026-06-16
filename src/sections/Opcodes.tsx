@@ -5,7 +5,7 @@ import { Search, Terminal } from 'lucide-react'
 
 gsap.registerPlugin(ScrollTrigger)
 
-type Category = 'all' | 'stack' | 'arithmetic' | 'comparison' | 'bitwise' | 'control' | 'memory' | 'oop' | 'exception' | 'gpu' | 'math'
+type Category = 'all' | 'stack' | 'arithmetic' | 'comparison' | 'bitwise' | 'control' | 'memory' | 'oop' | 'exception' | 'gpu' | 'math' | 'srvm'
 
 interface Opcode {
   name: string
@@ -17,7 +17,7 @@ interface Opcode {
 
 const categories: { id: Category; label: string }[] = [
   { id: 'all', label: 'All' },
-  { id: 'stack', label: 'Stack' },
+  { id: 'stack', label: 'Stack (SGVM)' },
   { id: 'arithmetic', label: 'Arithmetic' },
   { id: 'comparison', label: 'Comparison' },
   { id: 'bitwise', label: 'Bitwise' },
@@ -27,6 +27,7 @@ const categories: { id: Category; label: string }[] = [
   { id: 'exception', label: 'Exception' },
   { id: 'gpu', label: 'GPU' },
   { id: 'math', label: 'Math' },
+  { id: 'srvm', label: 'Register (SRVM)' },
 ]
 
 const opcodes: Opcode[] = [
@@ -142,6 +143,11 @@ const opcodes: Opcode[] = [
 
   // Halt (0xFF)
   { name: 'OP_HALT', value: '0xFF', description: 'Halt VM execution immediately', category: 'control', example: 'OP_HALT  ; Stop execution, return exit code' },
+
+  // SRVM / RISC-V Operations (Custom/RV64I subset)
+  { name: 'SRVM_ADD', value: '0x33', description: 'Add registers: rd = rs1 + rs2', category: 'srvm', example: 'SRVM_ADD x10, x11, x12 ; x10 = x11 + x12' },
+  { name: 'SRVM_LDC', value: '0x5B', description: 'Load constant to register (U-type)', category: 'srvm', example: 'SRVM_LDC x10, 0x12345 ; x10 = 0x12345' },
+  { name: 'SRVM_JAL', value: '0x6F', description: 'Jump and link (J-type)', category: 'srvm', example: 'SRVM_JAL x1, offset ; x1 = pc+4; pc += offset' },
 ]
 
 export default function Opcodes() {

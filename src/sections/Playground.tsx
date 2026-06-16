@@ -1028,6 +1028,8 @@ export default function Playground() {
           <p className="font-body text-white/50 mt-4 max-w-2xl mx-auto">
             Write Sage code, compile to bytecode, and execute step-by-step.
             Watch the stack, globals, and console in real-time.
+            <br />
+            <span className="text-amber">Note: This playground currently runs the Stack-based SGVM. Register-based SRVM execution is supported via CLI build pipeline.</span>
           </p>
         </div>
 
