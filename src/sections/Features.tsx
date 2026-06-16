@@ -54,18 +54,18 @@ OP_RETURN`,
   },
   {
     num: '04',
-    title: 'MetalVM Execution',
-    subtitle: 'Runtime',
+    title: 'JIT Compilation',
+    subtitle: 'Native Target',
     description:
-      'The SGVM interpreter loads the binary, verifies bytecode integrity, and executes instructions via a threaded interpreter with native bridge support.',
+      'The register VM (SRVM) IR is JIT-compiled to native machine code (RISC-V/x86_64/ARM64) for high-performance execution. Includes OSR hooks and memory management.',
     icon: Cpu,
     color: '#ffaa00',
-    code: `SGVM Header: "SGVM" v0x0100
-Constants: 4
-Chunks: 1
-Execution: 45 cycles
-Output: "Hello, SageVM!"
-Return: 43`,
+    code: `JIT Compile(SRVM_IR) -> 
+Native RISC-V:
+    ADD rd, rs1, rs2
+    ADDI rd, rs1, imm
+    JR ra
+Status: Enabled (Hot-path OSR)`,
   },
 ]
 
@@ -218,7 +218,7 @@ export default function Features() {
               <div className="w-8 h-px bg-white/20" />
               <div className="w-0 h-0 border-l-[5px] border-l-white/20 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent" />
             </div>
-            <span className="text-amber">Runtime</span>
+            <span className="text-amber">JIT Runtime</span>
           </div>
         </div>
       </div>
