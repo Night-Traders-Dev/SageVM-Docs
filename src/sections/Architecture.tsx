@@ -167,12 +167,29 @@ export default function DependencyGraph() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [scale, setScale] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
-  const [isDragging, setIsDragging] = useState(false)
   const [dragNode, setDragNode] = useState<string | null>(null)
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
   const animationRef = useRef<number>(0)
   const lastTimeRef = useRef<number>(0)
+
+  // Handle resizing and DPI
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (entry) {
+        const { width, height } = entry.contentRect
+        setDimensions({ width, height })
+      }
+    })
+
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [])
 
   // Force simulation step
   const simulate = useCallback((dt: number) => {
@@ -217,8 +234,8 @@ export default function DependencyGraph() {
       })
 
       // Center gravity
-      const cx = 400
-      const cy = 300
+      const cx = dimensions.width / 2
+      const cy = dimensions.height / 2
       newNodes.forEach(n => {
         n.vx += (cx - n.x) * centerForce
         n.vy += (cy - n.y) * centerForce
@@ -234,7 +251,7 @@ export default function DependencyGraph() {
 
       return newNodes
     })
-  }, [dragNode])
+  }, [dragNode, dimensions])
 
   // Render loop
   useEffect(() => {
@@ -243,6 +260,10 @@ export default function DependencyGraph() {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+    canvas.width = dimensions.width * dpr
+    canvas.height = dimensions.height * dpr
+    
     const render = (time: number) => {
       const dt = Math.min((time - lastTimeRef.current) / 1000, 0.1) || 0.016
       lastTimeRef.current = time
@@ -251,6 +272,7 @@ export default function DependencyGraph() {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.save()
+      ctx.scale(dpr, dpr)
       ctx.translate(offset.x, offset.y)
       ctx.scale(scale, scale)
 
@@ -336,29 +358,60 @@ export default function DependencyGraph() {
 
     animationRef.current = requestAnimationFrame(render)
     return () => cancelAnimationFrame(animationRef.current)
-  }, [nodes, hoveredNode, selectedNode, scale, offset, simulate])
+  }, [nodes, hoveredNode, selectedNode, scale, offset, simulate, dimensions])
 
-  // Mouse handlers
-  const getCanvasPos = (e: React.MouseEvent) => {
+  // Coordinate extraction
+  const getEventPos = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current
-    if (!canvas) return { x: 0, y: 0 }
+    if (!canvas) return { x: 0, y: 0, clientX: 0, clientY: 0 }
     const rect = canvas.getBoundingClientRect()
+    
+    let clientX, clientY
+    if ('touches' in e) {
+      if (e.touches.length === 0) return { x: 0, y: 0, clientX: 0, clientY: 0 }
+      clientX = e.touches[0].clientX
+      clientY = e.touches[0].clientY
+    } else {
+      clientX = e.clientX
+      clientY = e.clientY
+    }
+
     return {
-      x: (e.clientX - rect.left - offset.x) / scale,
-      y: (e.clientY - rect.top - offset.y) / scale
+      x: (clientX - rect.left - offset.x) / scale,
+      y: (clientY - rect.top - offset.y) / scale,
+      clientX,
+      clientY
     }
   }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const pos = getCanvasPos(e)
-    setMousePos({ x: e.clientX, y: e.clientY })
+  const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const pos = getEventPos(e)
+    const clicked = nodes.find(n => {
+      const dx = pos.x - n.x
+      const dy = pos.y - n.y
+      return Math.sqrt(dx * dx + dy * dy) < n.radius
+    })
+
+    if (clicked) {
+      setDragNode(clicked.id)
+      setSelectedNode(clicked)
+    } else {
+      setIsPanning(true)
+      setPanStart({ x: pos.clientX, y: pos.clientY })
+      setSelectedNode(null)
+    }
+  }
+
+  const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
+    const pos = getEventPos(e)
+    setMousePos({ x: pos.clientX, y: pos.clientY })
 
     if (isPanning) {
       setOffset({
-        x: offset.x + (e.clientX - panStart.x),
-        y: offset.y + (e.clientY - panStart.y)
+        x: offset.x + (pos.clientX - panStart.x),
+        y: offset.y + (pos.clientY - panStart.y)
       })
-      setPanStart({ x: e.clientX, y: e.clientY })
+      setPanStart({ x: pos.clientX, y: pos.clientY })
       return
     }
 
@@ -369,41 +422,20 @@ export default function DependencyGraph() {
       return
     }
 
-    // Hover detection
-    const hovered = nodes.find(n => {
-      const dx = pos.x - n.x
-      const dy = pos.y - n.y
-      return Math.sqrt(dx * dx + dy * dy) < n.radius
-    }) || null
-    setHoveredNode(hovered)
-  }
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const pos = getCanvasPos(e)
-    const clicked = nodes.find(n => {
-      const dx = pos.x - n.x
-      const dy = pos.y - n.y
-      return Math.sqrt(dx * dx + dy * dy) < n.radius
-    })
-
-    if (clicked) {
-      setDragNode(clicked.id)
-      setSelectedNode(clicked)
-      if (isDragging) {
-        setIsDragging(true)
-      } else {
-        setIsDragging(false)
-      }
-    } else {
-      setIsPanning(true)
-      setPanStart({ x: e.clientX, y: e.clientY })
+    // Hover detection (only for mouse)
+    if (!('touches' in e)) {
+      const hovered = nodes.find(n => {
+        const dx = pos.x - n.x
+        const dy = pos.y - n.y
+        return Math.sqrt(dx * dx + dy * dy) < n.radius
+      }) || null
+      setHoveredNode(hovered)
     }
   }
 
-  const handleMouseUp = () => {
-    setIsDragging(false)
-    setIsPanning(false)
+  const handleEnd = () => {
     setDragNode(null)
+    setIsPanning(false)
   }
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -420,7 +452,7 @@ export default function DependencyGraph() {
   }
 
   return (
-    <div ref={containerRef} className="relative w-full h-[600px] bg-[#0a0a0f] rounded-xl overflow-hidden border border-white/[0.08]">
+    <div ref={containerRef} className="relative w-full h-[600px] md:h-[700px] bg-[#0a0a0f] rounded-xl overflow-hidden border border-white/[0.08] touch-none">
       {/* Controls */}
       <div className="absolute top-4 left-4 z-10 flex gap-2">
         <button
@@ -429,13 +461,13 @@ export default function DependencyGraph() {
         >
           Reset View
         </button>
-        <div className="px-3 py-1.5 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white/50 text-xs font-mono">
+        <div className="px-3 py-1.5 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white/50 text-xs font-mono hidden md:block">
           Zoom: {(scale * 100).toFixed(0)}%
         </div>
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1.5">
+      <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1.5 pointer-events-none md:pointer-events-auto">
         {Object.entries(NODE_COLORS).map(([type, color]) => (
           <div key={type} className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
@@ -445,30 +477,31 @@ export default function DependencyGraph() {
       </div>
 
       {/* Instructions */}
-      <div className="absolute bottom-4 right-4 z-10 text-white/30 text-[10px] font-mono">
+      <div className="absolute bottom-4 right-4 z-10 text-white/30 text-[10px] font-mono hidden md:block">
         Drag nodes • Scroll to zoom • Drag background to pan • Click node for details
       </div>
 
       <canvas
         ref={canvasRef}
-        width={800}
-        height={600}
         className="w-full h-full cursor-grab active:cursor-grabbing"
-        onMouseMove={handleMouseMove}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseMove={handleMove}
+        onMouseDown={handleStart}
+        onMouseUp={handleEnd}
+        onMouseLeave={handleEnd}
         onWheel={handleWheel}
+        onTouchStart={handleStart}
+        onTouchMove={handleMove}
+        onTouchEnd={handleEnd}
       />
 
-      {/* Tooltip */}
+      {/* Tooltip (Desktop Only) */}
       <AnimatePresence>
         {hoveredNode && !selectedNode && (
           <motion.div
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 5 }}
-            className="absolute z-20 pointer-events-none"
+            className="absolute z-20 pointer-events-none hidden md:block"
             style={{
               left: mousePos.x + 15,
               top: mousePos.y - 10,
@@ -488,46 +521,52 @@ export default function DependencyGraph() {
         )}
       </AnimatePresence>
 
-      {/* Detail Panel */}
+      {/* Detail Panel (Responsive) */}
       <AnimatePresence>
         {selectedNode && (
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="absolute top-4 right-4 z-20 w-[280px]"
+            initial={{ opacity: 0, y: 20, x: 0 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, y: 20, x: 0 }}
+            className="absolute bottom-0 md:bottom-auto md:top-4 right-0 md:right-4 z-20 w-full md:w-[320px] p-4 md:p-0"
           >
-            <div className="bg-[#0f0f18] border border-white/[0.12] rounded-xl p-4 shadow-xl">
-              <div className="flex items-center justify-between mb-3">
+            <div className="bg-[#0f0f18]/95 backdrop-blur-md border border-white/[0.12] rounded-t-2xl md:rounded-xl p-4 md:p-5 shadow-2xl overflow-y-auto max-h-[60vh] md:max-h-none">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: NODE_COLORS[selectedNode.type] }} />
-                  <span className="text-white font-mono text-sm font-bold">{selectedNode.label}</span>
+                  <span className="text-white font-mono text-sm md:text-base font-bold">{selectedNode.label}</span>
                 </div>
                 <button
                   onClick={() => setSelectedNode(null)}
-                  className="text-white/40 hover:text-white text-xs"
+                  className="text-white/40 hover:text-white text-lg md:text-xs p-1"
                 >
                   ✕
                 </button>
               </div>
 
-              <p className="text-white/60 text-xs leading-relaxed mb-3">
+              <p className="text-white/70 text-xs md:text-sm leading-relaxed mb-4">
                 {selectedNode.description}
               </p>
 
-              {selectedNode.lines && (
-                <div className="mb-3">
-                  <span className="text-white/30 text-[10px] font-mono uppercase tracking-wider">Size</span>
-                  <p className="text-white/70 text-xs font-mono">{selectedNode.lines} lines</p>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                {selectedNode.lines && (
+                  <div>
+                    <span className="text-white/30 text-[10px] font-mono uppercase tracking-wider">Size</span>
+                    <p className="text-white/90 text-xs font-mono">{selectedNode.lines} lines</p>
+                  </div>
+                )}
+                <div>
+                  <span className="text-white/30 text-[10px] font-mono uppercase tracking-wider">Type</span>
+                  <p className="text-white/90 text-xs font-mono capitalize">{selectedNode.type}</p>
                 </div>
-              )}
+              </div>
 
               {selectedNode.imports && selectedNode.imports.length > 0 && (
-                <div className="mb-3">
+                <div className="mb-4">
                   <span className="text-white/30 text-[10px] font-mono uppercase tracking-wider">Imports</span>
-                  <div className="flex flex-wrap gap-1 mt-1">
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
                     {selectedNode.imports.map(imp => (
-                      <span key={imp} className="px-1.5 py-0.5 bg-white/[0.05] rounded text-white/50 text-[10px] font-mono">
+                      <span key={imp} className="px-2 py-0.5 bg-white/[0.05] border border-white/[0.08] rounded text-white/60 text-[10px] font-mono">
                         {imp}
                       </span>
                     ))}
@@ -538,15 +577,15 @@ export default function DependencyGraph() {
               {/* Connected edges */}
               <div>
                 <span className="text-white/30 text-[10px] font-mono uppercase tracking-wider">Connections</span>
-                <div className="mt-1 space-y-1">
+                <div className="mt-2 space-y-2">
                   {EDGES.filter(e => e.source === selectedNode.id || e.target === selectedNode.id).map(edge => {
                     const otherId = edge.source === selectedNode.id ? edge.target : edge.source
                     const other = nodes.find(n => n.id === otherId)
                     if (!other) return null
                     return (
-                      <div key={edge.source + edge.target} className="flex items-center gap-2 text-[10px] font-mono">
-                        <span className="text-white/40">{edge.label}</span>
-                        <span className="text-white/70">{other.label}</span>
+                      <div key={edge.source + edge.target} className="flex items-center gap-3 text-[10px] md:text-xs font-mono p-2 bg-white/[0.03] rounded-lg border border-white/[0.05]">
+                        <span className="text-white/40 italic">{edge.label}</span>
+                        <span className="text-white/90 font-bold">{other.label}</span>
                       </div>
                     )
                   })}
