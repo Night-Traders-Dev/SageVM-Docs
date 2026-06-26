@@ -212,7 +212,7 @@ export default function Opcodes() {
           </h2>
           <p className="font-body text-white/50 mt-4 max-w-2xl mx-auto">
             61 general-purpose opcodes plus 28 GPU opcodes. Full parity with
-            SageLang v3.6.5 MetalVM. Every opcode includes a usage example.
+            SageLang v3.9.0 MetalVM. Every opcode includes a usage example.
           </p>
         </div>
 
